@@ -54,18 +54,15 @@ class Cell():
         self.has_bottom_wall = True
         
     def draw(self, canvas, fill_color):
-        if self.has_left_wall == True:
+        if self.has_left_wall:
             canvas.create_line(self.top_left.x, self.top_left.y, self.top_left.x, self.bottom_right.y, fill=fill_color, width = 1)
-            canvas.pack(fill=BOTH, expand=1)
-        if self.has_right_wall == True:
+        if self.has_right_wall:
             canvas.create_line(self.bottom_right.x, self.top_left.y, self.bottom_right.x, self.bottom_right.y, fill=fill_color, width = 1)
-            canvas.pack(fill=BOTH, expand=1)
-        if self.has_top_wall == True:
+        if self.has_top_wall:
             canvas.create_line(self.top_left.x, self.top_left.y, self.bottom_right.x, self.top_left.y, fill=fill_color, width = 1)
-            canvas.pack(fill=BOTH, expand=1)
-        if self.has_bottom_wall == True:
+        if self.has_bottom_wall:
             canvas.create_line(self.top_left.x, self.bottom_right.y, self.bottom_right.x, self.bottom_right.y, fill=fill_color, width = 1)
-            canvas.pack(fill=BOTH, expand=1)
+        canvas.pack(fill=BOTH, expand=1)
 
 
 
