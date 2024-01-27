@@ -1,79 +1,107 @@
 from tkinter import Tk, BOTH, Canvas
 
-class Window():
+
+class Window:
     def __init__(self, width, height):
-        self.width = width
-        self.height = height
-        self.root = Tk()
-        self.root.title("Maze Solver")
-        self.c = Canvas(self.root, width=self.width, height=self.height)
-        self.c.pack(fill=BOTH, expand=1)
-        self.running = False
-        self.root.protocol("WM_DELETE_WINDOW", self.close)
+        self.__root = Tk()
+        self.__root.title("Maze Solver")
+        self.__root.protocol("WM_DELETE_WINDOW", self.close)
+        self.__canvas = Canvas(self.__root, bg="white", height=height, width=width)
+        self.__canvas.pack(fill=BOTH, expand=1)
+        self.__running = False
 
     def redraw(self):
-        self.root.update_idletasks()
-        self.root.update()
+        self.__root.update_idletasks()
+        self.__root.update()
 
     def wait_for_close(self):
-        self.running = True
-        while self.running == True:
+        self.__running = True
+        while self.__running:
             self.redraw()
+        print("window closed...")
+
+    def draw_line(self, line, fill_color="black"):
+        line.draw(self.__canvas, fill_color)
 
     def close(self):
-        self.running = False
+        self.__running = False
 
-    def draw_line(self, line, fill_color):
-        line.draw(self.c, fill_color)
 
-    def draw_cell(self, cell, fill_color):
-        cell.draw(self.c, fill_color)
-            
-
-class Point():
+class Point:
     def __init__(self, x, y):
         self.x = x
         self.y = y
-    
-class Line():
-    def __init__(self, point_one, point_two):
-        self.point_one = point_one
-        self.point_two = point_two
-        
-    def draw(self, canvas, fill_color):
-        canvas.create_line(self.point_one.x, self.point_one.y, self.point_two.x, self.point_two.y, fill=fill_color, width = 2)
+
+
+class Line:
+    def __init__(
+        self,
+        p1,
+        p2,
+    ):
+        self.p1 = p1
+        self.p2 = p2
+
+    def draw(self, canvas, fill_color="black"):
+        canvas.create_line(
+            self.p1.x, self.p1.y, self.p2.x, self.p2.y, fill=fill_color, width=2
+        )
         canvas.pack(fill=BOTH, expand=1)
 
-class Cell():
-    def __init__(self, top_left, bottom_right):
-        self.top_left = top_left
-        self.bottom_right = bottom_right
+class Cell:
+    def __init__(self, win):
         self.has_left_wall = True
         self.has_right_wall = True
         self.has_top_wall = True
         self.has_bottom_wall = True
-        
-    def draw(self, canvas, fill_color):
+        self.visited = False
+        self._x1 = None
+        self._x2 = None
+        self._y1 = None
+        self._y2 = None
+        self._win = win
+
+    def draw(self, x1, y1, x2, y2):
+        self._x1 = x1
+        self._x2 = x2
+        self._y1 = y1
+        self._y2 = y2
         if self.has_left_wall:
-            canvas.create_line(self.top_left.x, self.top_left.y, self.top_left.x, self.bottom_right.y, fill=fill_color, width = 1)
-        if self.has_right_wall:
-            canvas.create_line(self.bottom_right.x, self.top_left.y, self.bottom_right.x, self.bottom_right.y, fill=fill_color, width = 1)
+            line = Line(Point(x1, y1), Point(x1, y2))
+            self._win.draw_line(line)
         if self.has_top_wall:
-            canvas.create_line(self.top_left.x, self.top_left.y, self.bottom_right.x, self.top_left.y, fill=fill_color, width = 1)
+            line = Line(Point(x1, y1), Point(x2, y1))
+            self._win.draw_line(line)
+        if self.has_right_wall:
+            line = Line(Point(x2, y1), Point(x2, y2))
+            self._win.draw_line(line)
         if self.has_bottom_wall:
-            canvas.create_line(self.top_left.x, self.bottom_right.y, self.bottom_right.x, self.bottom_right.y, fill=fill_color, width = 1)
-        canvas.pack(fill=BOTH, expand=1)
+            line = Line(Point(x1, y2), Point(x2, y2))
+            self._win.draw_line(line)
 
-
+    def draw_move(self, to_cell, undo=False):
+        if not undo:
+            fill_color_move = "red"
+        else:
+            fill_color_move = "gray"
+        move_line = Line(
+            Point(self._x2 - ((self._x2 - self._x1) * 0.5), self._y2 - ((self._y2 - self._y1) * 0.5)),
+            Point(to_cell._x2 - ((to_cell._x2 - to_cell._x1) * 0.5 ), to_cell._y2 - ((to_cell._y2 - self._y1) * 0.5))
+            )
+        self._win.draw_line(move_line, fill_color_move)
 
 def main():
     win = Window(800, 600)
-    p1 = Point(50, 50)
-    p2 = Point(500, 500)
-    l1 = Line(p1, p2)
-    c1 = Cell(p1, p2)
-    win.draw_line(l1, "red")
-    win.draw_cell(c1, "black")
+
+    c1 = Cell(win)
+    c1.draw(50, 50, 100, 100)
+
+    c2 = Cell(win)
+    c2.draw(100, 50, 150, 100)
+
+    c1.draw_move(c2)
+
     win.wait_for_close()
+
 
 main()
