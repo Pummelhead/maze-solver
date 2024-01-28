@@ -70,15 +70,27 @@ class Cell:
         if self.has_left_wall:
             line = Line(Point(x1, y1), Point(x1, y2))
             self._win.draw_line(line)
+        if not self.has_left_wall:
+            line = Line(Point(x1, y1), Point(x1, y2))
+            self._win.draw_line(line, "white")
         if self.has_top_wall:
             line = Line(Point(x1, y1), Point(x2, y1))
             self._win.draw_line(line)
+        if not self.has_top_wall:
+            line = Line(Point(x1, y1), Point(x2, y1))
+            self._win.draw_line(line, "white")
         if self.has_right_wall:
             line = Line(Point(x2, y1), Point(x2, y2))
             self._win.draw_line(line)
+        if not self.has_right_wall:
+            line = Line(Point(x2, y1), Point(x2, y2))
+            self._win.draw_line(line, "white")
         if self.has_bottom_wall:
             line = Line(Point(x1, y2), Point(x2, y2))
             self._win.draw_line(line)
+        if not self.has_bottom_wall:
+            line = Line(Point(x1, y2), Point(x2, y2))
+            self._win.draw_line(line, "white")
 
     def draw_move(self, to_cell, undo=False):
         if not undo:
@@ -101,6 +113,7 @@ class Maze:
         self.cell_size_y = cell_size_y
         self.win = win
         self._create_cells()
+        self._break_entrance_and_exit()
 
     def _create_cells(self):
         self.cols = []
@@ -118,6 +131,25 @@ class Maze:
                 j += self.cell_size_y
             i += self.cell_size_x
             j = self.y1
+        
+
+    def _break_entrance_and_exit(self):
+        self.cols[0][0].has_top_wall = False
+        self.cols[self.num_cols-1][self.num_rows-1].has_bottom_wall = False
+        self.cols[0][0].draw(
+            self.cols[0][0]._x1,
+            self.cols[0][0]._y1,
+            self.cols[0][0]._x2,
+            self.cols[0][0]._y2
+            )
+        self._animate()
+        self.cols[self.num_cols-1][self.num_rows-1].draw(
+            self.cols[self.num_cols-1][self.num_rows-1]._x1,
+            self.cols[self.num_cols-1][self.num_rows-1]._y1,
+            self.cols[self.num_cols-1][self.num_rows-1]._x2,
+            self.cols[self.num_cols-1][self.num_rows-1]._y2
+            )
+        self._animate()
 
     def _draw_cell(self, i, j, cell):
         cell.draw(i, j, i + self.cell_size_x, j + self.cell_size_y)
@@ -130,7 +162,7 @@ class Maze:
 def main():
     win = Window(800, 800)
 
-    m1 = Maze(1, 1, 16, 16, 50, 50, win)
+    m1 = Maze(50, 50, 4, 4, 50, 50, win)
 
     win.wait_for_close()
 
