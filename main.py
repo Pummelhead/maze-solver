@@ -118,6 +118,7 @@ class Maze:
         self.cell_size_x = cell_size_x
         self.cell_size_y = cell_size_y
         self.win = win
+        self._break_path_stack = []
         self._create_cells()
         self._break_entrance_and_exit()
         if seed:
@@ -165,6 +166,7 @@ class Maze:
     def _break_walls_r(self, i, j):
         self.current_cell = self.cols[i][j]
         self.current_cell.visited = True
+        self._break_path_stack.append(self.current_cell)
         while True:
             to_visit= []
             if i > 0:
@@ -199,6 +201,7 @@ class Maze:
                 self.current_cell._y2
                 )
                 self._animate()
+                self.current_cell = self._break_path_stack[-1]
                 return
             else:
                 self.going = to_visit.pop(random.randrange(len(to_visit)))
@@ -318,12 +321,12 @@ class Maze:
     
     def _animate(self):
         self.win.redraw()
-        time.sleep(0.02)
+        time.sleep(0.01)
 
 def main():
     win = Window(800, 800)
 
-    m1 = Maze(50, 50, 12, 12, 50, 50, win, 6)
+    m1 = Maze(50, 50, 12, 12, 50, 50, win)
     m1.solve()
 
     win.wait_for_close()
