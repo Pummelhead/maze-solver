@@ -68,30 +68,34 @@ class Cell:
         self._x2 = x2
         self._y1 = y1
         self._y2 = y2
-        if self.has_left_wall:
-            line = Line(Point(x1, y1), Point(x1, y2))
-            self._win.draw_line(line)
-        if not self.has_left_wall:
-            line = Line(Point(x1, y1), Point(x1, y2))
-            self._win.draw_line(line, "white")
-        if self.has_top_wall:
-            line = Line(Point(x1, y1), Point(x2, y1))
-            self._win.draw_line(line)
-        if not self.has_top_wall:
-            line = Line(Point(x1, y1), Point(x2, y1))
-            self._win.draw_line(line, "white")
-        if self.has_right_wall:
-            line = Line(Point(x2, y1), Point(x2, y2))
-            self._win.draw_line(line)
-        if not self.has_right_wall:
-            line = Line(Point(x2, y1), Point(x2, y2))
-            self._win.draw_line(line, "white")
-        if self.has_bottom_wall:
-            line = Line(Point(x1, y2), Point(x2, y2))
-            self._win.draw_line(line)
-        if not self.has_bottom_wall:
-            line = Line(Point(x1, y2), Point(x2, y2))
-            self._win.draw_line(line, "white")
+        if not hasattr(self, 'initial_drawn') or self.initial_drawn is False:
+            if self.has_left_wall:
+                line = Line(Point(x1, y1), Point(x1, y2))
+                self._win.draw_line(line)
+            if self.has_top_wall:
+                line = Line(Point(x1, y1), Point(x2, y1))
+                self._win.draw_line(line)
+            if self.has_right_wall:
+                line = Line(Point(x2, y1), Point(x2, y2))
+                self._win.draw_line(line)
+            if self.has_bottom_wall:
+                line = Line(Point(x1, y2), Point(x2, y2))
+                self._win.draw_line(line)
+            self.initial_drawn = True
+        else:
+            if not self.has_left_wall:
+                line = Line(Point(x1, y1), Point(x1, y2))
+                self._win.draw_line(line, "white")
+            if not self.has_top_wall:
+                line = Line(Point(x1, y1), Point(x2, y1))
+                self._win.draw_line(line, "white")
+            if not self.has_right_wall:
+                line = Line(Point(x2, y1), Point(x2, y2))
+                self._win.draw_line(line, "white")
+            if not self.has_bottom_wall:
+                line = Line(Point(x1, y2), Point(x2, y2))
+                self._win.draw_line(line, "white")
+
 
     def draw_move(self, to_cell, undo=False):
         if not undo:
@@ -100,7 +104,7 @@ class Cell:
             fill_color_move = "gray"
         move_line = Line(
             Point(self._x2 - ((self._x2 - self._x1) * 0.5), self._y2 - ((self._y2 - self._y1) * 0.5)),
-            Point(to_cell._x2 - ((to_cell._x2 - to_cell._x1) * 0.5 ), to_cell._y2 - ((to_cell._y2 - self._y1) * 0.5))
+            Point(to_cell._x2 - ((to_cell._x2 - to_cell._x1) * 0.5 ), to_cell._y2 - ((to_cell._y2 - to_cell._y1) * 0.5))
             )
         self._win.draw_line(move_line, fill_color_move)
 
@@ -120,6 +124,7 @@ class Maze:
             self.seed = random.seed(seed)
         self._break_walls_r(0, 0)
         self._reset_cells_visited()
+        self.path_stack = []
 
     def _create_cells(self):
         self.cols = []
@@ -197,6 +202,7 @@ class Maze:
                 return
             else:
                 self.going = to_visit.pop(random.randrange(len(to_visit)))
+                self.going.visited = True
                 if self.going == self.cell_to_left:
                     self.current_cell.has_left_wall = False
                     self.cell_to_left.has_right_wall = False
@@ -223,12 +229,6 @@ class Maze:
                     self.current_cell._x2,
                     self.current_cell._y2
                     )
-                    self.cell_to_right.draw(
-                    self.cell_to_right._x1,
-                    self.cell_to_right._y1,
-                    self.cell_to_right._x2,
-                    self.cell_to_right._y2
-                    )
                     self._animate()
                     self._break_walls_r(i+1,j)
                 if self.going == self.cell_above:
@@ -239,12 +239,6 @@ class Maze:
                     self.current_cell._y1,
                     self.current_cell._x2,
                     self.current_cell._y2
-                    )
-                    self.cell_above.draw(
-                    self.cell_above._x1,
-                    self.cell_above._y1,
-                    self.cell_above._x2,
-                    self.cell_above._y2
                     )
                     self._animate()
                     self._break_walls_r(i,j-1)
@@ -257,12 +251,6 @@ class Maze:
                     self.current_cell._x2,
                     self.current_cell._y2
                     )
-                    self.cell_below.draw(
-                    self.cell_below._x1,
-                    self.cell_below._y1,
-                    self.cell_below._x2,
-                    self.cell_below._y2
-                    )
                     self._animate()
                     self._break_walls_r(i,j+1)
                     
@@ -274,15 +262,65 @@ class Maze:
     def _draw_cell(self, i, j, cell):
         cell.draw(i, j, i + self.cell_size_x, j + self.cell_size_y)
         self._animate()
+
+    def solve(self):
+        return self._solve_r(0, 0)
+
+    def _solve_r(self, i, j):
+        self._animate()
+        self.current_cell = self.cols[i][j]
+        self.current_cell.visited = True
+        self.path_stack.append(self.current_cell)
+        if self.current_cell == self.cols[self.num_cols-1][self.num_rows-1]:
+            return True
+        if i > 0 and self.current_cell.has_left_wall == False and self.cols[i-1][j].visited == False: #Cell to Left
+            self.cell_to_left = self.cols[i-1][j]
+            self.current_cell.draw_move(self.cell_to_left)
+            if self._solve_r(i-1, j) == True:
+                return True
+            else:
+                self.path_stack[-1].draw_move(self.path_stack[-2], True)
+                self._animate()
+                self.path_stack.pop()
+        if i < self.num_cols - 1 and self.current_cell.has_right_wall == False and self.cols[i+1][j].visited == False: #Cell to Right
+            self.cell_to_right = self.cols[i+1][j]
+            self.current_cell.draw_move(self.cell_to_right)
+            if self._solve_r(i+1, j) == True:
+                return True
+            else:
+                self.path_stack[-1].draw_move(self.path_stack[-2], True)
+                self._animate()
+                self.path_stack.pop()
+        if j > 0 and self.current_cell.has_top_wall == False and self.cols[i][j-1].visited == False: #Cell Above
+            self.cell_above = self.cols[i][j-1]
+            self.current_cell.draw_move(self.cell_above)
+            if self._solve_r(i, j-1) == True:
+                return True
+            else:
+                self.path_stack[-1].draw_move(self.path_stack[-2], True)
+                self._animate()
+                self.path_stack.pop()
+        if j < self.num_rows - 1 and self.current_cell.has_bottom_wall == False and self.cols[i][j+1].visited == False: #Cell Below
+            self.cell_below = self.cols[i][j+1]
+            self.current_cell.draw_move(self.cell_below)
+            if self._solve_r(i, j+1) == True:
+                return True
+            else:
+                self.path_stack[-1].draw_move(self.path_stack[-2], True)
+                self._animate()
+                self.path_stack.pop()
+        return False
+
     
     def _animate(self):
         self.win.redraw()
-        time.sleep(0.005)
+        time.sleep(0.1)
 
 def main():
     win = Window(800, 800)
 
-    m1 = Maze(50, 50, 8, 8, 50, 50, win)
+    m1 = Maze(50, 50, 10, 10, 50, 50, win, 1)
+    m1.solve()
 
     win.wait_for_close()
 
