@@ -61,6 +61,7 @@ class Cell:
         self._x2 = None
         self._y1 = None
         self._y2 = None
+        self.name = None
         self._win = win
 
     def draw(self, x1, y1, x2, y2):
@@ -131,6 +132,8 @@ class Maze:
         self.cols = []
         i = self.x1
         j = self.y1
+        k = 0
+        l = 0
         for x in range(0, self.num_cols):
             self.cells = []
             for y in range(0, self.num_rows):
@@ -139,11 +142,16 @@ class Maze:
             self.cols.append(self.cells)
         for col in self.cols:
             for cell in col:
+                cell.name = f"{k}, {l}"
+                l += 1
+            k += 1
+            l = 0
+        for col in self.cols:
+            for cell in col:
                 self._draw_cell(i, j, cell)
                 j += self.cell_size_y
             i += self.cell_size_x
             j = self.y1
-        
 
     def _break_entrance_and_exit(self):
         self.cols[0][0].has_top_wall = False
@@ -163,36 +171,25 @@ class Maze:
             )
         self._animate()
 
-    def _break_walls_r(self, i, j):
+    def _break_walls_r(self, i, j, k = None, l = None):
         self.current_cell = self.cols[i][j]
         self.current_cell.visited = True
-        self._break_path_stack.append(self.current_cell)
+        if k != None and l != None:
+            self._break_path_stack.append((k,l))
         while True:
             to_visit= []
             if i > 0:
                 if self.cols[i-1][j].visited == False: #Cell to Left
-                    self.cell_to_left = self.cols[i-1][j]
-                    to_visit.append(self.cell_to_left)
-            else:
-                self.cell_to_left = None
+                    to_visit.append((self.cols[i-1][j], "left"))
             if i < self.num_cols - 1:
                 if self.cols[i+1][j].visited == False: #Cell to Right
-                    self.cell_to_right = self.cols[i+1][j]
-                    to_visit.append(self.cell_to_right) 
-            else:
-                self.cell_to_right = None
+                    to_visit.append((self.cols[i+1][j], "right")) 
             if j > 0:
                 if self.cols[i][j-1].visited == False: #Cell Above
-                    self.cell_above = self.cols[i][j-1]
-                    to_visit.append(self.cell_above)
-            else:
-                self.cell_above = None
+                    to_visit.append((self.cols[i][j-1], "up"))
             if j < self.num_rows - 1:
                 if self.cols[i][j+1].visited == False: #Cell Below
-                    self.cell_below = self.cols[i][j+1]
-                    to_visit.append(self.cell_below)
-            else:
-                self.cell_below = None
+                    to_visit.append((self.cols[i][j+1], "down"))
             if not to_visit:
                 self.current_cell.draw(
                 self.current_cell._x1,
@@ -201,31 +198,27 @@ class Maze:
                 self.current_cell._y2
                 )
                 self._animate()
-                self.current_cell = self._break_path_stack[-1]
+                if self._break_path_stack:
+                    k, l = self._break_path_stack.pop()
+                    self.current_cell = self.cols[k][l]
                 return
             else:
-                self.going = to_visit.pop(random.randrange(len(to_visit)))
+                self.going, direction = to_visit.pop(random.randrange(len(to_visit)))
                 self.going.visited = True
-                if self.going == self.cell_to_left:
+                if direction == "left":
                     self.current_cell.has_left_wall = False
-                    self.cell_to_left.has_right_wall = False
+                    self.going.has_right_wall = False
                     self.current_cell.draw(
                     self.current_cell._x1,
                     self.current_cell._y1,
                     self.current_cell._x2,
                     self.current_cell._y2
                     )
-                    self.cell_to_left.draw(
-                    self.cell_to_left._x1,
-                    self.cell_to_left._y1,
-                    self.cell_to_left._x2,
-                    self.cell_to_left._y2
-                    )
                     self._animate()
-                    self._break_walls_r(i-1,j)
-                if self.going == self.cell_to_right:
+                    self._break_walls_r(i-1,j, i, j)
+                if direction == "right":
                     self.current_cell.has_right_wall = False
-                    self.cell_to_right.has_left_wall = False
+                    self.going.has_left_wall = False
                     self.current_cell.draw(
                     self.current_cell._x1,
                     self.current_cell._y1,
@@ -233,10 +226,10 @@ class Maze:
                     self.current_cell._y2
                     )
                     self._animate()
-                    self._break_walls_r(i+1,j)
-                if self.going == self.cell_above:
+                    self._break_walls_r(i+1,j, i, j)
+                if direction == "up":
                     self.current_cell.has_top_wall = False
-                    self.cell_above.has_bottom_wall = False
+                    self.going.has_bottom_wall = False
                     self.current_cell.draw(
                     self.current_cell._x1,
                     self.current_cell._y1,
@@ -244,10 +237,10 @@ class Maze:
                     self.current_cell._y2
                     )
                     self._animate()
-                    self._break_walls_r(i,j-1)
-                if self.going == self.cell_below:
+                    self._break_walls_r(i,j-1, i, j)
+                if direction == "down":
                     self.current_cell.has_bottom_wall = False
-                    self.cell_below.has_top_wall = False
+                    self.going.has_top_wall = False
                     self.current_cell.draw(
                     self.current_cell._x1,
                     self.current_cell._y1,
@@ -255,7 +248,8 @@ class Maze:
                     self.current_cell._y2
                     )
                     self._animate()
-                    self._break_walls_r(i,j+1)
+                    self._break_walls_r(i,j+1, i, j)
+
                     
     def _reset_cells_visited(self):
         for col in self.cols:
@@ -326,7 +320,7 @@ class Maze:
 def main():
     win = Window(800, 800)
 
-    m1 = Maze(50, 50, 12, 12, 50, 50, win)
+    m1 = Maze(50, 50, 25, 25, 25, 25, win)
     m1.solve()
 
     win.wait_for_close()
