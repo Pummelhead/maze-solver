@@ -282,6 +282,7 @@ class Maze:
                 self.path_stack[-1].draw_move(self.path_stack[-2], True)
                 self._animate()
                 self.path_stack.pop()
+                self.current_cell = self.path_stack[-1]
         if i < self.num_cols - 1 and self.current_cell.has_right_wall == False and self.cols[i+1][j].visited == False: #Cell to Right
             self.cell_to_right = self.cols[i+1][j]
             self.current_cell.draw_move(self.cell_to_right)
@@ -291,6 +292,7 @@ class Maze:
                 self.path_stack[-1].draw_move(self.path_stack[-2], True)
                 self._animate()
                 self.path_stack.pop()
+                self.current_cell = self.path_stack[-1]
         if j > 0 and self.current_cell.has_top_wall == False and self.cols[i][j-1].visited == False: #Cell Above
             self.cell_above = self.cols[i][j-1]
             self.current_cell.draw_move(self.cell_above)
@@ -300,6 +302,7 @@ class Maze:
                 self.path_stack[-1].draw_move(self.path_stack[-2], True)
                 self._animate()
                 self.path_stack.pop()
+                self.current_cell = self.path_stack[-1]
         if j < self.num_rows - 1 and self.current_cell.has_bottom_wall == False and self.cols[i][j+1].visited == False: #Cell Below
             self.cell_below = self.cols[i][j+1]
             self.current_cell.draw_move(self.cell_below)
@@ -309,17 +312,18 @@ class Maze:
                 self.path_stack[-1].draw_move(self.path_stack[-2], True)
                 self._animate()
                 self.path_stack.pop()
+                self.current_cell = self.path_stack[-1]
         return False
 
     
     def _animate(self):
         self.win.redraw()
-        time.sleep(0.1)
+        time.sleep(0.02)
 
 def main():
     win = Window(800, 800)
 
-    m1 = Maze(50, 50, 10, 10, 50, 50, win, 1)
+    m1 = Maze(50, 50, 12, 12, 50, 50, win, 6)
     m1.solve()
 
     win.wait_for_close()
